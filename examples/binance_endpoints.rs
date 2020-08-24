@@ -63,33 +63,33 @@ fn account() {
         Err(e) => println!("Error: {}", e),
     }
 
-    match account.limit_buy("WTCETH", 10, 0.014000) {
+    match account.limit_buy("WTCETH", 10, 0.014000, None) {
         Ok(answer) => println!("{:?}", answer),
         Err(e) => println!("Error: {}", e),
     }
 
-    match account.market_buy("WTCETH", 5) {
+    match account.market_buy("WTCETH", 5, None) {
         Ok(answer) => println!("{:?}", answer),
         Err(e) => println!("Error: {}", e),
     }
 
-    match account.limit_sell("WTCETH", 10, 0.035000) {
+    match account.limit_sell("WTCETH", 10, 0.035000, None) {
         Ok(answer) => println!("{:?}", answer),
         Err(e) => println!("Error: {}", e),
     }
 
-    match account.market_sell("WTCETH", 5) {
+    match account.market_sell("WTCETH", 5, None) {
         Ok(answer) => println!("{:?}", answer),
         Err(e) => println!("Error: {}", e),
     }
 
     let order_id = 1_957_528;
-    match account.order_status("WTCETH", order_id) {
+    match account.order_status("WTCETH", Some(order_id), None) {
         Ok(answer) => println!("{:?}", answer),
         Err(e) => println!("Error: {}", e),
     }
 
-    match account.cancel_order("WTCETH", order_id) {
+    match account.cancel_order("WTCETH", Some(order_id), None, None) {
         Ok(answer) => println!("{:?}", answer),
         Err(e) => println!("Error: {}", e),
     }
