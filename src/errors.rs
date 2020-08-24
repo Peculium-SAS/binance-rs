@@ -1,8 +1,4 @@
-use std;
-use reqwest;
-use url;
-use serde_json;
-use tungstenite;
+use serde::Deserialize;
 use serde_json::Value;
 use std::collections::HashMap;
 
@@ -12,7 +8,7 @@ pub struct BinanceContentError {
     pub msg: String,
 
     #[serde(flatten)]
-    extra: HashMap<String, Value>,    
+    extra: HashMap<String, Value>,
 }
 
 error_chain! {

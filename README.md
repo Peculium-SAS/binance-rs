@@ -1,6 +1,6 @@
 # binance-rs
 
-Unofficial Rust Library for the [Binance API](https://github.com/binance-exchange/binance-official-api-docs)
+Unofficial Rust Library for the [Binance API](https://github.com/binance-exchange/binance-official-api-docs) and [Binance Futures API](https://binance-docs.github.io/apidocs/futures/en/#general-info)
 
 [![Crates.io](https://img.shields.io/crates/v/binance.svg)](https://crates.io/crates/binance)
 [![Build Status](https://travis-ci.org/wisespace-io/binance-rs.png?branch=master)](https://travis-ci.org/wisespace-io/binance-rs)
@@ -27,7 +27,7 @@ Add this to your Cargo.toml
 binance = { git = "https://github.com/wisespace-io/binance-rs.git" }
 ```
 
-## Rust >= 1.37
+## Rust >= 1.41
 
 ```rust
 rustup install stable
@@ -232,46 +232,42 @@ extern crate binance;
 use binance::api::*;
 use binance::userstream::*;
 use binance::websockets::*;
+use std::sync::atomic::{AtomicBool};
 
-let api_key_user = Some("YOUR_KEY".into());
-let keep_running = AtomicBool::new(true); // Used to control the event loop
-let user_stream: UserStream = Binance::new(api_key_user, None);
+fn main() {
+    let api_key_user = Some("YOUR_KEY".into());
+    let keep_running = AtomicBool::new(true); // Used to control the event loop
+    let user_stream: UserStream = Binance::new(api_key_user, None);
 
-if let Ok(answer) = user_stream.start() {
-    let listen_key = answer.listen_key;
+    if let Ok(answer) = user_stream.start() {
+	let listen_key = answer.listen_key;
 
-    let mut web_socket: WebSockets = WebSockets::new(|event: WebsocketEvent| {
-        match event {
-            WebsocketEvent::AccountUpdate(account_update) => {
-                for balance in &account_update.balance {
-                    println!(
-                        "Asset: {}, free: {}, locked: {}",
-                        balance.asset, balance.free, balance.locked
-                    );
-                }
-            },
-            WebsocketEvent::OrderTrade(trade) => {
-                println!(
-                    "Symbol: {}, Side: {}, Price: {}, Execution Type: {}",
-                    trade.symbol, trade.side, trade.price, trade.execution_type
-                );
-            },
-            _ => (),
-        };
+	let mut web_socket: WebSockets = WebSockets::new(|event: WebsocketEvent| {
+	    match event {
+		WebsocketEvent::AccountUpdate(account_update) => {
+		    for balance in &account_update.balance {
+			println!("Asset: {}, free: {}, locked: {}", balance.asset, balance.free, balance.locked);
+		    }
+		},
+		WebsocketEvent::OrderTrade(trade) => {
+		    println!("Symbol: {}, Side: {}, Price: {}, Execution Type: {}", trade.symbol, trade.side, trade.price, trade.execution_type);
+		},
+		_ => (),
+	    };
+	    Ok(())
+	});
 
-        Ok(())
-    });
-
-    web_socket.connect(&listen_key).unwrap(); // check error
-    if let Err(e) = web_socket.event_loop(&keep_running) {
-        match e {
-            err => {
-                println!("Error: {}", err);
-            }
-        }
-    }
-} else {
-    println!("Not able to start an User Stream (Check your API_KEY)");
+	web_socket.connect(&listen_key).unwrap(); // check error
+	    if let Err(e) = web_socket.event_loop(&keep_running) {
+		match e {
+		    err => {
+		        println!("Error: {}", err);
+		    }
+		}
+	     }
+	} else {
+	    println!("Not able to start an User Stream (Check your API_KEY)");
+	}
 }
 ```
 
@@ -280,35 +276,37 @@ if let Ok(answer) = user_stream.start() {
 ```rust
 extern crate binance;
 
-use binance::api::*;
 use binance::websockets::*;
+use std::sync::atomic::{AtomicBool};
 
-let keep_running = AtomicBool::new(true); // Used to control the event loop
-let agg_trade: String = format!("!ticker@arr");
-let mut web_socket: WebSockets = WebSockets::new(|event: WebsocketEvent| {
-    match event {
-        WebsocketEvent::DayTicker(ticker_events) => {
-            for tick_event in ticker_events {
-                if tick_event.symbol == "BTCUSDT" {
-                    btcusdt = tick_event.average_price.parse().unwrap();
-                    let btcusdt_close: f32 = tick_event.current_close.parse().unwrap();
-                    println!("{} - {}", btcusdt, btcusdt_close);
-                }
-            }
-        },
-        _ => (),
-    };
+fn main() {
+    let keep_running = AtomicBool::new(true); // Used to control the event loop
+    let agg_trade: String = format!("!ticker@arr");
+    let mut web_socket: WebSockets = WebSockets::new(|event: WebsocketEvent| {
+	match event {
+	    WebsocketEvent::DayTicker(ticker_events) => {
+	        for tick_event in ticker_events {
+		    if tick_event.symbol == "BTCUSDT" {
+			let btcusdt: f32 = tick_event.average_price.parse().unwrap();
+			let btcusdt_close: f32 = tick_event.current_close.parse().unwrap();
+			println!("{} - {}", btcusdt, btcusdt_close);
+		    }
+		}
+	    },
+	    _ => (),
+        };
 
-    Ok(())
-});
+        Ok(())
+    });
 
-web_socket.connect(&agg_trade).unwrap(); // check error
-if let Err(e) = web_socket.event_loop(&keep_running) {
-    match e {
-        err => {
-           println!("Error: {}", err);
-        }
-    }
+    web_socket.connect(&agg_trade).unwrap(); // check error
+    if let Err(e) = web_socket.event_loop(&keep_running) {
+	match e {
+	    err => {
+	        println!("Error: {}", err);
+	    }
+	}
+     }
 }
 ```
 
@@ -317,33 +315,33 @@ if let Err(e) = web_socket.event_loop(&keep_running) {
 ```rust
 extern crate binance;
 
-use binance::api::*;
 use binance::websockets::*;
+use std::sync::atomic::{AtomicBool};
 
-let keep_running = AtomicBool::new(true); // Used to control the event loop
-let kline: String = format!("{}", "ethbtc@kline_1m");
-let mut web_socket: WebSockets = WebSockets::new(|event: WebsocketEvent| {
-    match event {
-        WebsocketEvent::Kline(kline_event) => {
-            println!(
-                "Symbol: {}, high: {}, low: {}",
-                kline_event.kline.symbol, kline_event.kline.low, kline_event.kline.high
-            );
-        },
-        _ => (),
-    };
-    Ok(())
-});
-
-web_socket.connect(&kline).unwrap(); // check error
-if let Err(e) = web_socket.event_loop(&keep_running) {
-    match e {
-        err => {
-           println!("Error: {}", err);
+fn main() {
+    let keep_running = AtomicBool::new(true); // Used to control the event loop
+    let kline: String = format!("{}", "ethbtc@kline_1m");
+    let mut web_socket: WebSockets = WebSockets::new(|event: WebsocketEvent| {
+        match event {
+            WebsocketEvent::Kline(kline_event) => {
+                println!("Symbol: {}, high: {}, low: {}", kline_event.kline.symbol, kline_event.kline.low, kline_event.kline.high);
+            },
+            _ => (),
+        };
+        Ok(())
+    });
+ 
+    web_socket.connect(&kline).unwrap(); // check error
+    if let Err(e) = web_socket.event_loop(&keep_running) {
+        match e {
+          err => {
+             println!("Error: {}", err);
+          }
         }
-    }
+     }
+     web_socket.disconnect().unwrap();
 }
-web_socket.disconnect().unwrap();
+
 ```
 
 ## Other Exchanges
